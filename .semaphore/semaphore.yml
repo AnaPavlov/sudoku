@@ -1,0 +1,49 @@
+# Use the latest stable version of Semaphore 2.0 YML syntax:
+version: v1.0
+
+name: Sudoku tests
+
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu1804
+
+blocks:
+  - name: Install dependencies
+    task:
+      env_vars:
+        - name: NODE_ENV
+          value: test
+        - name: CI
+          value: 'true'
+
+      prologue:
+        commands:
+          - checkout
+          - nvm use
+          - node --version
+          - yarn --version
+      jobs:
+        - name: Run yarn install and cache
+          commands:
+            - yarn install
+            - cache store client-node-modules-$SEMAPHORE_GIT_BRANCH-$(checksum yarn.lock) node_modules
+
+  - name: Run unit tests
+    task:
+      env_vars:
+        - name: NODE_ENV
+          value: test
+        - name: CI
+          value: 'true'
+      prologue:
+        commands:
+          - checkout
+          - nvm use
+          - node --version
+          - yarn --version
+      jobs:
+        - name: Run yarn test
+          commands:
+            - cache restore client-node-modules-$SEMAPHORE_GIT_BRANCH-$(checksum yarn.lock),client-node-modules-$SEMAPHORE_GIT_BRANCH,client-node-modules-master
+            - yarn test
